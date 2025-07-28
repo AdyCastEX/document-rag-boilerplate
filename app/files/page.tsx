@@ -4,15 +4,53 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { extractTextFromMultiplePDFs, getPDFFiles } from './actions';
 
 export default function FilesPage() {
   const [filePath, setFilePath] = useState('public/files');
   const [message, setMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleGenerateEmbeddings = () => {
-    setMessage('Generate Embeddings functionality will be implemented here!');
-    // Clear message after 3 seconds
-    setTimeout(() => setMessage(''), 3000);
+  const handleGenerateEmbeddings = async () => {
+    setIsProcessing(true);
+    setMessage('Processing PDF files...');
+    
+    try {
+      // Get all PDF files from public/files
+      const pdfFiles = await getPDFFiles();
+      
+      if (pdfFiles.length === 0) {
+        setMessage('No PDF files found in public/files directory');
+        console.log('No PDF files found in public/files directory');
+        return;
+      }
+      
+      console.log(`Found ${pdfFiles.length} PDF files:`, pdfFiles);
+      
+      // Extract text from all PDFs
+      const results = await extractTextFromMultiplePDFs(pdfFiles);
+      
+      // Log results to console
+      console.log('PDF Text Extraction Results:');
+      results.forEach((result, index) => {
+        console.log(`\n--- PDF ${index + 1}: ${result.filename} ---`);
+        if (result.error) {
+          console.error(`Error: ${result.error}`);
+        } else {
+          console.log(`Text length: ${result.text.length} characters`);
+          console.log('Extracted text:', result.text.substring(0, 500) + '...');
+        }
+      });
+      
+      setMessage(`Successfully processed ${results.length} PDF files. Check console for extracted text.`);
+    } catch (error) {
+      console.error('Error processing PDFs:', error);
+      setMessage(`Error processing PDFs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setMessage(''), 5000);
+    }
   };
 
   return (
@@ -60,8 +98,8 @@ export default function FilesPage() {
             </div>
             
             <div>
-              <Button onClick={handleGenerateEmbeddings} variant="default">
-                Generate Embeddings
+              <Button onClick={handleGenerateEmbeddings} variant="default" disabled={isProcessing}>
+                {isProcessing ? 'Processing...' : 'Generate Embeddings'}
               </Button>
             </div>
             
