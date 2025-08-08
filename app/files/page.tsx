@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { extractTextFromMultiplePDFs, getPDFFiles } from './actions';
+import { processFiles } from './actions';
 
 export default function FilesPage() {
   const [filePath, setFilePath] = useState('public/files');
@@ -16,33 +16,10 @@ export default function FilesPage() {
     setMessage('Processing PDF files...');
     
     try {
-      // Get all PDF files from public/files
-      const pdfFiles = await getPDFFiles();
+      // Use the processFiles function to handle everything
+      await processFiles();
       
-      if (pdfFiles.length === 0) {
-        setMessage('No PDF files found in public/files directory');
-        console.log('No PDF files found in public/files directory');
-        return;
-      }
-      
-      console.log(`Found ${pdfFiles.length} PDF files:`, pdfFiles);
-      
-      // Extract text from all PDFs
-      const results = await extractTextFromMultiplePDFs(pdfFiles);
-      
-      // Log results to console
-      console.log('PDF Text Extraction Results:');
-      results.forEach((result, index) => {
-        console.log(`\n--- PDF ${index + 1}: ${result.filename} ---`);
-        if (result.error) {
-          console.error(`Error: ${result.error}`);
-        } else {
-          console.log(`Text length: ${result.text.length} characters`);
-          console.log('Extracted text:', result.text.substring(0, 500) + '...');
-        }
-      });
-      
-      setMessage(`Successfully processed ${results.length} PDF files. Check console for extracted text.`);
+      setMessage('Successfully processed all PDF files. Check console for detailed logs.');
     } catch (error) {
       console.error('Error processing PDFs:', error);
       setMessage(`Error processing PDFs: ${error instanceof Error ? error.message : 'Unknown error'}`);

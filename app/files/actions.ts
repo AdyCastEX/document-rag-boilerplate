@@ -2,6 +2,10 @@
 
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { join } from 'path'
+import { openai } from '@ai-sdk/openai'
+import { embed } from 'ai'
+import { createClient } from '@/lib/supabase/server'
+import { createHash } from 'crypto'
 
 /**
  * Extract text content from a PDF file
@@ -12,50 +16,20 @@ export async function extractTextFromPDF(filename: string): Promise<string> {
   try {
     // Construct the full path to the PDF file
     const filePath = join(process.cwd(), 'public', 'files', filename)
-    console.log('Attempting to extract text from:', filePath)
     
     // Check if file exists
     const { access } = await import('fs/promises')
     await access(filePath)
-    console.log('File exists, initializing LangChain PDFLoader...')
     
-    // Create PDFLoader instance
+    // Create PDFLoader instance and load documents
     const loader = new PDFLoader(filePath)
-    console.log('PDFLoader created, starting document loading...')
-    
-    // Load documents using LangChain
     const docs = await loader.load()
-    console.log('PDF loading completed')
-    console.log('Number of documents/pages:', docs.length)
     
     // Combine all page content into a single string
     const fullText = docs.map(doc => doc.pageContent).join('\n\n')
-    console.log('Combined text from all pages')
-    console.log('Total text length:', fullText.length, 'characters')
-    
-    // Log the actual extracted text
-    console.log('Extracted text content:')
-    console.log('--- START OF EXTRACTED TEXT ---')
-    console.log(fullText)
-    console.log('--- END OF EXTRACTED TEXT ---')
-    
-    // Log metadata from first document
-    if (docs.length > 0) {
-      console.log('PDF metadata:', {
-        source: docs[0].metadata.source,
-        totalPages: docs[0].metadata.pdf?.totalPages,
-        version: docs[0].metadata.pdf?.version
-      })
-    }
     
     return fullText
   } catch (error) {
-    console.error('Error extracting text from PDF:', error)
-    console.error('Error details:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
-    })
     throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
@@ -104,3 +78,76 @@ export async function extractTextFromMultiplePDFs(filenames: string[]): Promise<
   
   return results
 }
+
+/**
+ * Chunk text into smaller pieces for embedding processing using fixed chunk size
+ * @param text - The text to chunk
+ * @param options - Chunking options
+ * @returns Array of text chunks with metadata
+ */
+export async function chunkText(
+  text: string,
+  options: {
+    chunkSize?: number
+    chunkOverlap?: number
+  } = {}
+): Promise<Array<{
+  content: string
+  index: number
+}>> {}
+
+/**
+ * Process all PDF files: get files, extract text, and chunk each one
+ * Logs progress for each iteration
+ */
+export async function processFiles(): Promise<void> {
+  console.log('Starting processFiles...')
+  
+  try {
+    // Get all PDF files
+    const pdfFiles = await getPDFFiles()
+    console.log(`Found ${pdfFiles.length} PDF files:`, pdfFiles)
+    
+    // Process each file using forEach
+    pdfFiles.forEach(async (filename, index) => {
+      console.log(`\n--- Processing file ${index + 1}/${pdfFiles.length}: ${filename} ---`)
+      
+      try {
+        // Extract text from PDF
+        console.log(`Extracting text from ${filename}...`)
+        const extractedText = await extractTextFromPDF(filename)
+        console.log(`Text extraction completed for ${filename}. Length: ${extractedText.length} characters`)
+        
+        // Chunk the text with chunkText()
+        
+        // Generate UUID based on filename for document grouping
+        // Convert hash to valid UUID format (8-4-4-4-12)
+        
+        // Create embeddings per chunk using createEmbeddings()
+      } catch (error) {
+        console.error(`❌ Error processing ${filename}:`, error)
+      }
+    })
+    
+    console.log('\n🎉 processFiles completed!')
+    
+  } catch (error) {
+    console.log('❌ Error in processFiles:', error)
+    throw error
+  }
+}
+
+/**
+ * Create embeddings for text chunks and store them in Supabase
+ * @param chunks - Array of text chunks with metadata
+ * @param documentId - UUID to group chunks from the same document
+ * @param filename - Original filename for metadata
+ */
+export async function createEmbeddings(
+  chunks: Array<{
+    content: string
+    index: number
+  }>,
+  documentId: string,
+  filename: string
+): Promise<void> {}
