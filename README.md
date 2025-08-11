@@ -75,3 +75,33 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 To process PDF documents with the RAG system, place your PDF files in the `public/files/` directory. The application will automatically detect and process documents from this location.
 
+## Implementation Tasks
+
+The following functions need to be implemented to complete the RAG system:
+
+### 1. Text Chunking (`app/files/actions.ts`)
+Implement the `chunkText` function to split document text into manageable chunks for embedding:
+- Split text into overlapping chunks (starting point: 200 characters with 40 character overlap)
+- Preserve sentence boundaries when possible
+- Return an array of text chunks
+
+### 2. Embedding Creation (`app/files/actions.ts`)
+Implement the `createEmbeddings` function to generate vector embeddings:
+- Use OpenAI's `text-embedding-3-small` model
+- Process text chunks and generate embeddings
+- Store embeddings in Supabase with associated metadata
+
+### 3. File Processing Integration (`app/files/actions.ts`)
+Apply the above functions in the `processFiles` function:
+- Extract text from PDF files
+- Chunk the extracted text using `chunkText`
+- Generate embeddings using `createEmbeddings`
+- Store results in the database
+
+### 4. Search Tool Implementation (Challenge) (`app/api/chat/route.ts`)
+Implement search embeddings as an AI SDK tool:
+- Create a `searchEmbeddings` tool that integrates with AI SDK tool calling
+- Use the existing RPC function `rpc_match_embeddings` for similarity search
+- Enable the chat system to automatically search for relevant context
+- Configure similarity threshold and match count parameters
+
